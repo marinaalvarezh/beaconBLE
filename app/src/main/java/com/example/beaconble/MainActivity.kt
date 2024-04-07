@@ -34,6 +34,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        //define la Main Screen con los botones de ranging y monitoring
+
         beaconReferenceApplication = application as BeaconReferenceApplication
 
         // Set up a Live Data observer for beacon data
@@ -56,6 +58,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume(){
         super.onResume()
+        //al iniciar la actividad se comprueba que los permisos estan aceptados
 
         if(!BeaconScanPermissionsActivity.allPermissionsGranted(this,true)){
             val intent = Intent (this, BeaconScanPermissionsActivity::class.java)
@@ -65,13 +68,17 @@ class MainActivity : AppCompatActivity() {
         else {
             // All permissions are granted now.  In the case where we are configured
             // to use a foreground service, we will not have been able to start scanning until
-            // after permissions are graned.  So we will do so here.
+            // after permissions are granted.  So we will do so here.
             if (BeaconManager.getInstanceForApplication(this).monitoredRegions.size == 0) {
                 (application as BeaconReferenceApplication).setupBeaconScanning()
             }
         }
     }
 
+    //monitoring detectar balizas en la region, ranging listar dichas balizas
+    //monitoring requiere menos recursos
+
+    //observador de si se encuentra en la region de la baliza
     val monitoringObserver = Observer<Int> { state ->
         var dialogTitle = "Beacons detected"
         var dialogMessage = "didEnterRegionEvent has fired"
@@ -87,6 +94,7 @@ class MainActivity : AppCompatActivity() {
             beaconCountTextView.text = "Inside the beacon region."
         }
         Log.d(TAG, "monitoring state changed to : $stateString")
+        // configura un alert dialog con un boton de OK
         val builder =
             AlertDialog.Builder(this)
         builder.setTitle(dialogTitle)
@@ -97,6 +105,7 @@ class MainActivity : AppCompatActivity() {
         alertDialog?.show()
     }
 
+    //si esta en el rango hace listado las balizas que hay
     val rangingObserver = Observer<Collection<Beacon>> { beacons ->
         Log.d(TAG, "Ranged: ${beacons.count()} beacons")
         if (BeaconManager.getInstanceForApplication(this).rangedRegions.size > 0) {
@@ -108,6 +117,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //boton para activar/desactivar el ranging
     fun rangingButtonTapped(view: View) {
         val beaconManager = BeaconManager.getInstanceForApplication(this)
         if (beaconManager.rangedRegions.size == 0) {
@@ -123,6 +133,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //boton para activar desactivar el monitoring
     fun monitoringButtonTapped(view: View) {
         var dialogTitle = ""
         var dialogMessage = ""
