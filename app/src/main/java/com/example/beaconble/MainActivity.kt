@@ -21,7 +21,7 @@ import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor
 
 
 class MainActivity : AppCompatActivity() {
-/*
+
     lateinit var beaconListView: ListView
     lateinit var beaconCountTextView: TextView
     lateinit var monitoringButton: Button
@@ -29,21 +29,25 @@ class MainActivity : AppCompatActivity() {
     lateinit var beaconReferenceApplication: BeaconReferenceApplication
     var alertDialog: AlertDialog? = null
 
- */
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_main)
+
 
         //define la Main Screen con los botones de ranging y monitoring
-/*
+
+        // All permissions are granted now.  In the case where we are configured
+        // to use a foreground service, we will not have been able to start scanning until
+        // after permissions are granted.  So we will do so here.
         beaconReferenceApplication = application as BeaconReferenceApplication
 
         // Set up a Live Data observer for beacon data
         val regionViewModel = BeaconManager.getInstanceForApplication(this).getRegionViewModel(beaconReferenceApplication.region)
         // observer will be called each time the monitored regionState changes (inside vs. outside region)
         regionViewModel.regionState.observe(this, monitoringObserver)
-        // observer will be called each time a new list of beacons is ranged (typically ~1 second in the foreground)
+        // observer will be called each time a new 'list of beacons is ranged (typically ~1 second in the foreground)
         regionViewModel.rangedBeacons.observe(this, rangingObserver)
         rangingButton = findViewById<Button>(R.id.rangingButton)
         monitoringButton = findViewById<Button>(R.id.monitoringButton)
@@ -52,7 +56,6 @@ class MainActivity : AppCompatActivity() {
         beaconCountTextView.text = "No beacons detected"
         beaconListView.adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, arrayOf("--"))
 
- */
     }
     override fun onPause() {
         Log.d(TAG, "onPause")
@@ -73,14 +76,13 @@ class MainActivity : AppCompatActivity() {
             // to use a foreground service, we will not have been able to start scanning until
             // after permissions are granted.  So we will do so here.
             if (BeaconManager.getInstanceForApplication(this).monitoredRegions.size == 0) {
-              //  (application as BeaconReferenceApplication).setupBeaconScanning()
+                beaconReferenceApplication = application as BeaconReferenceApplication
+                (application as BeaconReferenceApplication).setupBeaconScanning()
             }
         }
 
     }
 
-
-/*
     //monitoring detectar balizas en la region, ranging listar dichas balizas
     //monitoring requiere menos recursos
 
@@ -193,5 +195,4 @@ class MainActivity : AppCompatActivity() {
         val PERMISSION_REQUEST_FINE_LOCATION = 3
     }
 
- */
 }

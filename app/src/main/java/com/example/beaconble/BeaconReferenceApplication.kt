@@ -10,7 +10,7 @@ import org.altbeacon.beacon.*
 import org.altbeacon.bluetooth.BluetoothMedic
 
 class BeaconReferenceApplication: Application() {
-/*
+
     var region = Region("all-beacons", null, null, null)
     // Region representa el criterio que se usa para busacar las balizas, como no se quiere buscar una UUID especifica los 3 útlimos campos son null
 
@@ -19,8 +19,6 @@ class BeaconReferenceApplication: Application() {
 
         val beaconManager = BeaconManager.getInstanceForApplication(this)
         // Beacon Manager configura la interaccion con las beacons y el start/stop de ranging/monitoring
-
-        BeaconManager.setDebug(true)
 
         // Por defecto la biblioteca solo detecta AltBeacon si se quiere otro tipo de protocolo hay que añadir el layout
         //añadir iBeacons
@@ -42,12 +40,13 @@ class BeaconReferenceApplication: Application() {
 
         BeaconManager.setDebug(true)
 
-        // - periodically do a proactive scan or transmission to verify the bluetooth stack is OK
-        BluetoothMedic.getInstance().enablePeriodicTests(this, BluetoothMedic.SCAN_TEST + BluetoothMedic.TRANSMIT_TEST)
 
         //configurar escaneo
         setupBeaconScanning()
+
     }
+
+
     fun setupBeaconScanning() {
         val beaconManager = BeaconManager.getInstanceForApplication(this)
         // Por defecto, escanea cada 5/15 minutos dependiendo de la Version de Android
@@ -158,6 +157,8 @@ class BeaconReferenceApplication: Application() {
     companion object {
         val TAG = "BeaconReference"
     }
- */
+
 }
+
+
 
