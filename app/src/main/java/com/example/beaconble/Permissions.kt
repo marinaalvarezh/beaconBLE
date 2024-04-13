@@ -58,16 +58,16 @@ class PermissionsHelper(val context: Context) {
     }
     fun setFirstTimeAskingPermission(permissionString: String, isFirstTime: Boolean) {
         //Se almacena en XML dentro de Android un dato clave-valor (Shared Preferences), en este caso si es la primera vez que se pide un permiso
-        val sharedPreference = context.getSharedPreferences("com.example.beaconble",
-            Context.MODE_PRIVATE
+        val sharedPreference = context.getSharedPreferences("org.altbeacon.permisisons",
+            AppCompatActivity.MODE_PRIVATE
         )
-        sharedPreference.edit().putBoolean(permissionString, isFirstTime).apply()
+        sharedPreference.edit().putBoolean(permissionString,isFirstTime).apply()
         //se guarda el valor en el XML
     }
 
     fun isFirstTimeAskingPermission(permissionString: String): Boolean {
-        //Se busca en el XML si es la primera vez que se pide el permiso
-        val sharedPreference = context.getSharedPreferences("com.example.beaconble",
+        val sharedPreference = context.getSharedPreferences(
+            "org.altbeacon.permisisons",
             AppCompatActivity.MODE_PRIVATE
         )
         return sharedPreference.getBoolean(
@@ -110,7 +110,6 @@ open class BeaconScanPermissionsActivity: PermissionsActivity()  {
     lateinit var layout: LinearLayout
     lateinit var permissionGroups: List<Array<String>>
     lateinit var continueButton: Button
-    // scale tiene un getter que obtiene la densidad de pantalla del dispositivo para adapatar la IU
     var scale: Float = 1.0f
         get() {
             return this.getResources().getDisplayMetrics().density
@@ -263,7 +262,6 @@ open class BeaconScanPermissionsActivity: PermissionsActivity()  {
         }
     }
     fun allPermissionsGranted(permissionsGroup: Array<String>): Boolean {
-        //pregunta si un grupo de permisos ha sido aceptado
         val permissionsHelper = PermissionsHelper(this)
         for (permission in permissionsGroup) {
             if (!permissionsHelper.isPermissionGranted(permission)) {

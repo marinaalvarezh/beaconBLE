@@ -10,7 +10,7 @@ import org.altbeacon.beacon.*
 import org.altbeacon.bluetooth.BluetoothMedic
 
 class BeaconReferenceApplication: Application() {
-
+/*
     var region = Region("all-beacons", null, null, null)
     // Region representa el criterio que se usa para busacar las balizas, como no se quiere buscar una UUID especifica los 3 útlimos campos son null
 
@@ -158,5 +158,6 @@ class BeaconReferenceApplication: Application() {
     companion object {
         val TAG = "BeaconReference"
     }
-
+ */
 }
+
