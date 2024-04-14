@@ -18,6 +18,7 @@ import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.MonitorNotifier
 import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor
+import androidx.activity.ComponentActivity
 
 
 class MainActivity : AppCompatActivity() {
@@ -35,12 +36,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
         //define la Main Screen con los botones de ranging y monitoring
 
-        // All permissions are granted now.  In the case where we are configured
-        // to use a foreground service, we will not have been able to start scanning until
-        // after permissions are granted.  So we will do so here.
         beaconReferenceApplication = application as BeaconReferenceApplication
 
         // Set up a Live Data observer for beacon data

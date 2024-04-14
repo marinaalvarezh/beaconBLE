@@ -14,10 +14,26 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.view.setPadding
+
 
 open class PermissionsActivity: AppCompatActivity() {
     //comprueba el resultado de todos los permisos mediante una Actividad y un Contract
@@ -100,98 +116,67 @@ class PermissionsHelper(val context: Context) {
         }
         return permissions
     }
-
 }
 
-
-
 open class BeaconScanPermissionsActivity: PermissionsActivity()  {
-    //hereda de la Activity que comprueba el resultado de todos los permisos
-    lateinit var layout: LinearLayout
     lateinit var permissionGroups: List<Array<String>>
     lateinit var continueButton: Button
-    var scale: Float = 1.0f
-        get() {
-            return this.getResources().getDisplayMetrics().density
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         //hay que ejecutar el codigo de la AppCompatActivity padre antes que el de esta clase
         super.onCreate(savedInstanceState)
+        permissionGroups = PermissionsHelper(this).beaconScanPermissionGroupsNeeded(intent.getBooleanExtra("backgroundAccessRequested",true))
+        setContent{
+            PermissionsScreen(permissionsHelper = PermissionsHelper(this))
+        }
+    }
 
-        layout = LinearLayout(this)
-        layout.setPadding(dp(20))
-        layout.gravity = Gravity.CENTER
-        layout.setBackgroundColor(Color.WHITE)
-        layout.orientation = LinearLayout.VERTICAL
-        //se utiliza intent para recibir datos enviados a la Activity
-        //se define la IU de la Activity de los Permisos
-        val backgroundAccessRequested = intent.getBooleanExtra("backgroundAccessRequested", true)
+    @Composable
+    fun PermissionsScreen(permissionsHelper: PermissionsHelper){
+        val context = LocalContext.current
+        val permissionsHelper = PermissionsHelper(context)
+        val backgroundAccessRequested= intent.getBooleanExtra("backgroundAccessRequested", true)
         val title = intent.getStringExtra("title") ?: "Permissions Needed"
         val message = intent.getStringExtra("message") ?: "In order to scan for beacons, this app requrires the following permissions from the operating system.  Please tap each button to grant each required permission."
-        val continueButtonTitle = intent.getStringExtra("continueButtonTitle") ?: "Continue"
         val permissionButtonTitles = intent.getBundleExtra("permissionBundleTitles") ?: getDefaultPermissionTitlesBundle()
 
-        //hace la lista de permisos necesarios en funcion de la SDK
-        permissionGroups = PermissionsHelper(this).beaconScanPermissionGroupsNeeded(backgroundAccessRequested)
+        val permissionGroups = remember {permissionsHelper.beaconScanPermissionGroupsNeeded(backgroundAccessRequested)}
+        val permissionStates = remember { mutableStateListOf<Boolean>() }
 
-        val params = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        params.setMargins(dp(0), dp(10), dp(0), dp(10))
-
-
-        val titleView = TextView(this)
-        titleView.setGravity(Gravity.CENTER)
-        titleView.textSize = dp(10).toFloat()
-        titleView.text = title
-        titleView.layoutParams = params
-
-        layout.addView(titleView)
-        val messageView = TextView(this)
-        messageView.text = message
-        messageView.setGravity(Gravity.CENTER)
-        messageView.textSize = dp(5).toFloat()
-        messageView.textAlignment = TextView.TEXT_ALIGNMENT_CENTER
-        messageView.layoutParams = params
-        layout.addView(messageView)
-
-        //bucle para definir cada boton, el bundle se utiliza para pasar datos y guardar un estado
-        var index = 0
-        for (permissionGroup in permissionGroups) {
-            val button = Button(this)
-            val buttonTitle = permissionButtonTitles.getString(permissionGroup.first())
-            button.id = index
-            button.text = buttonTitle
-            button.layoutParams = params
-            button.setOnClickListener(buttonClickListener)
-            layout.addView(button)
-            index += 1
+        LaunchedEffect(key1 = permissionGroups) {
+            permissionStates.clear()
+            permissionStates.addAll(List(permissionGroups.size) { false })
         }
 
-        continueButton = Button(this)
-        continueButton.text = continueButtonTitle
-        continueButton.isEnabled = false
-        continueButton.setOnClickListener {
-            this.finish()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(androidx.compose.ui.graphics.Color.White),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ){
+            Text(text = title, fontSize = 18.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = message, fontSize = 18.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Spacer(modifier = Modifier.height(16.dp))
+            permissionGroups.forEach {permissionGroup ->
+                val buttonText = permissionButtonTitles.getString(permissionGroup.first())?:"Unknown Permission"
+                Button(
+                    onClick = {
+                        promptForPermissions(permissionGroup)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ){
+                    Text(text = buttonText)
+                }
+            }
         }
-        continueButton.layoutParams = params
-        layout.addView(continueButton)
 
-        setContentView(layout)
     }
 
-    fun dp(value: Int): Int {
-        return (value * scale + 0.5f).toInt()
-    }
-
-    //al pulsar lanza el prompt con el permiso correspondiente
-    val buttonClickListener = View.OnClickListener { button ->
-        val permissionsGroup = permissionGroups.get(button.id)
-        promptForPermissions(permissionsGroup)
-    }
-
+//establece una relacion entre el permiso de cada boton y el titulo del boton
     @SuppressLint("InlinedApi")
     fun getDefaultPermissionTitlesBundle(): Bundle {
         //Define la palabra de los botones que aparecera en la Activity de Permisos
@@ -203,7 +188,6 @@ open class BeaconScanPermissionsActivity: PermissionsActivity()  {
         return bundle
     }
 
-
     fun allPermissionGroupsGranted(): Boolean {
         //pregunta si todos los permisos de todos los grupos han sido aceptados
         for (permissionsGroup in permissionGroups) {
@@ -214,28 +198,14 @@ open class BeaconScanPermissionsActivity: PermissionsActivity()  {
         return true
     }
 
-    fun setButtonColors() {
-        var index = 0
-        //define el color de los botones en funcion de si se han aceptado
-        for (permissionsGroup in this.permissionGroups) {
-            val button = findViewById<Button>(index)
-            if (allPermissionsGranted(permissionsGroup)) {
-                // si todos los permisos de ese grupo se han aceptado
-                button.setBackgroundColor(Color.parseColor("#448844"))
-            }
-            else {
-                button.setBackgroundColor(Color.RED)
-            }
-            index += 1
-        }
-    }
     override fun onResume() {
         super.onResume()
-        //llama a la Activity padre, define los botones
-        setButtonColors()
-        if (allPermissionGroupsGranted()) {
-            // si se han aceptado todos los permisos de todos los grupos deja continuar
-            continueButton.isEnabled = true
+        //llama a la Activity padre
+        if(::permissionGroups.isInitialized) {
+            if (allPermissionGroupsGranted()) {
+                // si se han aceptado todos los permisos de todos los grupos deja continuar
+                continueButton.isEnabled = true
+            }
         }
     }
 
@@ -272,8 +242,6 @@ open class BeaconScanPermissionsActivity: PermissionsActivity()  {
     }
 
     companion object {
-        const val TAG = "BeaconScanPermissionActivity"
-
         // es la función principial que se llama desde la MainActivity
         fun allPermissionsGranted(context: Context, backgroundAccessRequested: Boolean): Boolean {
             val permissionsHelper = PermissionsHelper(context)
