@@ -127,6 +127,9 @@ class MainActivity : AppCompatActivity() {
                             val url = UrlBeaconUrlCompressor.uncompress(beacons.id1.toByteArray())
                             "URL: ${url}\nrssi: ${beacons.rssi}\nest. distance: ${beacons.distance} m"
                         }
+                        beacons.beaconTypeCode== 0x0505 -> {
+                            "numero aleatorio ${beacons.dataFields}"
+                        }
                         //Resto de balizas
                         else -> {
                             "id1: ${beacons.id1}\nid2: ${beacons.id2} id3:  rssi: ${beacons.rssi}\nest. distance: ${beacons.distance} m"

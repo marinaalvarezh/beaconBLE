@@ -37,6 +37,9 @@ class BeaconReferenceApplication: Application() {
         val eddyStoneURLParser = BeaconParser().setBeaconLayout("s:0-1=feaa,m:2-2=10,p:3-3:-41,i:4-20v")
         beaconManager.getBeaconParsers().add(eddyStoneURLParser)
 
+        //añadir beacon Custom
+        val customParser = BeaconParser().setBeaconLayout("m:0-1=0505,d:4-7")
+        beaconManager.getBeaconParsers().add(customParser)
 
         BeaconManager.setDebug(true)
 
