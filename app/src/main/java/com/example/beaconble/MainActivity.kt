@@ -19,6 +19,8 @@ import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.MonitorNotifier
 import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor
 import androidx.activity.ComponentActivity
+import java.lang.Long.toHexString
+import java.lang.Long.toUnsignedString
 
 
 class MainActivity : AppCompatActivity() {
@@ -128,9 +130,25 @@ class MainActivity : AppCompatActivity() {
                             "URL: ${url}\nrssi: ${beacons.rssi}\nest. distance: ${beacons.distance} m"
                         }
                         beacons.beaconTypeCode== 0x0505 -> {
-                            "numero aleatorio ${beacons.dataFields}"
+                            val dataFields = beacons.dataFields
+                            val packet = beacons.lastPacketRawBytes
+                            val hexData4= toHexString(packet[4].toLong())
+                            val byteData4 = packet[4]
+                            val intData4 = packet[4].toInt()
+
+                            val hexData5= toHexString(packet[5].toLong())
+                            val byteData5 = packet[5]
+                            val intData5 = packet[5].toInt()
+
+                            val combinedValue = ((intData4 and 0xFF) shl 8) or (intData5 and 0xFF)
+                            val signedValue = combinedValue.toShort()
+
+                            "Byte4: $byteData4 Byte5: $byteData5\nValor: $signedValue \nHex4: 0x$hexData4   Hex5: 0x$hexData5"
+                                  //  "\n Hexadecimal: $hexData\n Entero: $intData"
+
+
+                           // "Byte4: $byteData4\nHex4: 0x$hexData4\nInt4: $intData4\nDataFields: ${dataFields}"
                         }
-                        //Resto de balizas
                         else -> {
                             "id1: ${beacons.id1}\nid2: ${beacons.id2} id3:  rssi: ${beacons.rssi}\nest. distance: ${beacons.distance} m"
                         }
@@ -140,6 +158,8 @@ class MainActivity : AppCompatActivity() {
                 ArrayAdapter(this, android.R.layout.simple_list_item_1, beaconInfoList)
         }
     }
+
+
 
         //boton para activar/desactivar el ranging
         fun rangingButtonTapped(view: View) {
