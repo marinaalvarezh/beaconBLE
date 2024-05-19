@@ -19,6 +19,13 @@ import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.MonitorNotifier
 import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.window.isPopupLayout
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.POST
 import java.lang.Long.toHexString
 import java.lang.Long.toUnsignedString
 
@@ -31,6 +38,12 @@ class MainActivity : AppCompatActivity() {
     lateinit var rangingButton: Button
     lateinit var beaconReferenceApplication: BeaconReferenceApplication
     var alertDialog: AlertDialog? = null
+
+
+    val sensorDataList = mutableListOf<Post>()
+
+    val retrofit = createRetrofit()
+    val apiService = retrofit.create(APIService::class.java)
 
 
 
@@ -112,7 +125,9 @@ class MainActivity : AppCompatActivity() {
         alertDialog?.show()
     }
 
-
+    fun addData(fielData: Int){
+        sensorDataList.add(Post(System.currentTimeMillis(), fielData))
+    }
 
     //si esta en el rango hace listado las balizas que hay
     val rangingObserver = Observer<Collection<Beacon>> { beacons ->
@@ -130,7 +145,7 @@ class MainActivity : AppCompatActivity() {
                             "URL: ${url}\nrssi: ${beacons.rssi}\nest. distance: ${beacons.distance} m"
                         }
                         beacons.beaconTypeCode== 0x0505 -> {
-                            val dataFields = beacons.dataFields
+
                             val packet = beacons.lastPacketRawBytes
                             val hexData4= toHexString(packet[4].toLong())
                             val byteData4 = packet[4]
@@ -140,14 +155,12 @@ class MainActivity : AppCompatActivity() {
                             val byteData5 = packet[5]
                             val intData5 = packet[5].toInt()
 
-                            val combinedValue = ((intData4 and 0xFF) shl 8) or (intData5 and 0xFF)
-                            val signedValue = combinedValue.toShort()
+                            val combinedValue = (intData4 shl 8) or (intData5)
 
-                            "Byte4: $byteData4 Byte5: $byteData5\nValor: $signedValue \nHex4: 0x$hexData4   Hex5: 0x$hexData5"
-                                  //  "\n Hexadecimal: $hexData\n Entero: $intData"
+                            addData(combinedValue)
 
+                            "Byte4: $byteData4 Byte5: $byteData5\nValor: $combinedValue \nHex4: 0x$hexData4   Hex5: 0x$hexData5"
 
-                           // "Byte4: $byteData4\nHex4: 0x$hexData4\nInt4: $intData4\nDataFields: ${dataFields}"
                         }
                         else -> {
                             "id1: ${beacons.id1}\nid2: ${beacons.id2} id3:  rssi: ${beacons.rssi}\nest. distance: ${beacons.distance} m"
@@ -190,6 +203,7 @@ class MainActivity : AppCompatActivity() {
                 monitoringButton.text = "Stop Monitoring"
 
             } else {
+                createPost(apiService)
                 beaconManager.stopMonitoring(beaconReferenceApplication.region)
                 dialogTitle = "Beacon monitoring stopped."
                 dialogMessage =
@@ -206,6 +220,32 @@ class MainActivity : AppCompatActivity() {
             alertDialog?.show()
 
         }
+
+    private fun createRetrofit(): Retrofit {
+
+        return Retrofit.Builder()
+            .baseUrl("http://192.168.1.133:3000/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    private fun createPost(apiService : APIService) {
+        val call = apiService.createPost(sensorDataList)
+        call.enqueue(object : Callback<Post> {
+            override fun onResponse(call: Call<Post>, response: Response<Post>) {
+                if (response.isSuccessful) {
+                    val post = response.body()
+                    println("Created Post: ${post?.data}")
+                } else {
+                    println("Error: ${response.code()}")
+                }
+            }
+
+            override fun onFailure(call: Call<Post>, t: Throwable) {
+                println("Failed to create post: ${t.message}")
+            }
+        })
+    }
 
     companion object {
         val TAG = "MainActivity"

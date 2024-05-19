@@ -98,6 +98,7 @@ class PermissionsHelper(val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Version Android M (Marshmallow, Android 6.0). Se necesita ACCES_FINE_LOCATION
             permissions.add(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
+            permissions.add(arrayOf(Manifest.permission.INTERNET))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Version Android 10. El permiso anterior + ACCESS_BACKGROUND_LOCATION si es necesario
@@ -185,6 +186,7 @@ open class BeaconScanPermissionsActivity: PermissionsActivity()  {
         bundle.putString(Manifest.permission.ACCESS_BACKGROUND_LOCATION, "Background Location")
         bundle.putString(Manifest.permission.BLUETOOTH_SCAN, "Bluetooth")
         bundle.putString(Manifest.permission.POST_NOTIFICATIONS, "Notifications")
+        bundle.putString(Manifest.permission.INTERNET, "Internet")
         return bundle
     }
 
