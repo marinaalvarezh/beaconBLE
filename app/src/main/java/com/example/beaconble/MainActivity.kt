@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.beaconble.BeaconScanPermissionsActivity
 import android.app.AlertDialog
+import android.hardware.Sensor
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -20,12 +21,18 @@ import org.altbeacon.beacon.MonitorNotifier
 import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.window.isPopupLayout
+import com.google.gson.Gson
+import okhttp3.OkHttpClient
+import okhttp3.Interceptor
+import okhttp3.Request
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.POST
+import java.io.File
 import java.lang.Long.toHexString
 import java.lang.Long.toUnsignedString
 
@@ -40,10 +47,10 @@ class MainActivity : AppCompatActivity() {
     var alertDialog: AlertDialog? = null
 
 
-    val sensorDataList = mutableListOf<Post>()
+    val sensorDataList = mutableListOf<SensorData>()
 
-    val retrofit = createRetrofit()
-    val apiService = retrofit.create(APIService::class.java)
+    val config = readJSON("C:/Users/Marina/Documents/TFG/sensor_7001.json")
+
 
 
 
@@ -125,8 +132,20 @@ class MainActivity : AppCompatActivity() {
         alertDialog?.show()
     }
 
-    fun addData(fielData: Int){
-        sensorDataList.add(Post(System.currentTimeMillis(), fielData))
+    fun addData(fielData: Int) : SensorData{
+        val sensorData = SensorData(
+            id_sensor = config.sensor_id,
+            timestamp = "",
+            latitud =0.0f,
+            longitud = 0.0f,
+            orientacion = 0.0f,
+            inclinacion = 0.0f,
+            tipo_medida = "irradiancia",
+            valor = fielData
+        )
+
+        return sensorData
+
     }
 
     //si esta en el rango hace listado las balizas que hay
@@ -157,7 +176,8 @@ class MainActivity : AppCompatActivity() {
 
                             val combinedValue = (intData4 shl 8) or (intData5)
 
-                            addData(combinedValue)
+                            sensorDataList.add(addData(combinedValue))
+
 
                             "Byte4: $byteData4 Byte5: $byteData5\nValor: $combinedValue \nHex4: 0x$hexData4   Hex5: 0x$hexData5"
 
@@ -203,7 +223,7 @@ class MainActivity : AppCompatActivity() {
                 monitoringButton.text = "Stop Monitoring"
 
             } else {
-                createPost(apiService)
+                createPost(config.token, sensorDataList)
                 beaconManager.stopMonitoring(beaconReferenceApplication.region)
                 dialogTitle = "Beacon monitoring stopped."
                 dialogMessage =
@@ -221,27 +241,54 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-    private fun createRetrofit(): Retrofit {
+    private fun createRetrofit( baseURL: String, token: String): Retrofit {
+
+        val client = OkHttpClient.Builder()
+            .addInterceptor {chain: Interceptor.Chain ->
+                val original: Request = chain.request()
+                val request: Request = original.newBuilder()
+                    .header("Authorization", "Bearer $token")
+                    .method(original.method, original.body)
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
 
         return Retrofit.Builder()
-            .baseUrl("http://192.168.1.133:3000/")
+            .baseUrl(baseURL)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    private fun createPost(apiService : APIService) {
-        val call = apiService.createPost(sensorDataList)
-        call.enqueue(object : Callback<Post> {
-            override fun onResponse(call: Call<Post>, response: Response<Post>) {
+
+    private fun readJSON(filePath: String): ConfigJSON{
+        val file = File(filePath)
+        val json = file.readText()
+
+        return Gson().fromJson(json, ConfigJSON::class.java)
+
+    }
+
+    private fun createPost(
+        token: String,
+        sensorDataList: MutableList<SensorData>
+    ) {
+        val retrofit = createRetrofit("http://vps247.cesvima.upm.es/", token)
+        val apiService = retrofit.create(APIService::class.java)
+
+        val call = apiService.createPost(token, sensorDataList)
+
+        call.enqueue(object : Callback<ResponseBody> {
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                 if (response.isSuccessful) {
-                    val post = response.body()
-                    println("Created Post: ${post?.data}")
+                    println("Created Post: ${response.body()}")
                 } else {
-                    println("Error: ${response.code()}")
+                    println("Error: ${response.errorBody()}")
                 }
             }
 
-            override fun onFailure(call: Call<Post>, t: Throwable) {
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                 println("Failed to create post: ${t.message}")
             }
         })
