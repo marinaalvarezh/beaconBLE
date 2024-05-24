@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.beaconble.BeaconScanPermissionsActivity
 import android.app.AlertDialog
 import android.hardware.Sensor
+import android.os.Environment
+import android.os.Environment.getExternalStoragePublicDirectory
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -33,6 +35,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.POST
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
 import java.lang.Long.toHexString
 import java.lang.Long.toUnsignedString
 
@@ -49,14 +53,13 @@ class MainActivity : AppCompatActivity() {
 
     val sensorDataList = mutableListOf<SensorData>()
 
-    val config = readJSON("C:/Users/Marina/Documents/TFG/sensor_7001.json")
-
-
+    val configJSON = ConfigJSON ("7001", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTcxNjIyOTc0MCwianRpIjoiN2ZhMzRhN2UtNWFlYi00Y2QyLWE4ZjAtNWNmNDViMWU0NGNhIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6NzAwMSwibmJmIjoxNzE2MjI5NzQwLCJleHAiOjE3MTYyMzA2NDB9.VW1Om0dNadi341-T0XZS3exOfG1WRnGGQtZjMd6uPVA")
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
 
         //define la Main Screen con los botones de ranging y monitoring
 
@@ -75,7 +78,11 @@ class MainActivity : AppCompatActivity() {
         beaconCountTextView.text = "No beacons detected"
         beaconListView.adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, arrayOf("--"))
 
+
+
     }
+
+
     override fun onPause() {
         Log.d(TAG, "onPause")
         super.onPause()
@@ -101,6 +108,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
 
     //monitoring detectar balizas en la region, ranging listar dichas balizas
     //monitoring requiere menos recursos
@@ -133,8 +141,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun addData(fielData: Int) : SensorData{
+
         val sensorData = SensorData(
-            id_sensor = config.sensor_id,
+            id_sensor = configJSON.sensor_id,
             timestamp = "",
             latitud =0.0f,
             longitud = 0.0f,
@@ -223,7 +232,8 @@ class MainActivity : AppCompatActivity() {
                 monitoringButton.text = "Stop Monitoring"
 
             } else {
-                createPost(config.token, sensorDataList)
+                val token = configJSON.token
+                createPost("Bearer $token", sensorDataList)
                 beaconManager.stopMonitoring(beaconReferenceApplication.region)
                 dialogTitle = "Beacon monitoring stopped."
                 dialogMessage =
@@ -262,14 +272,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun readJSON(filePath: String): ConfigJSON{
-        val file = File(filePath)
-        val json = file.readText()
-
-        return Gson().fromJson(json, ConfigJSON::class.java)
-
-    }
-
     private fun createPost(
         token: String,
         sensorDataList: MutableList<SensorData>
@@ -279,17 +281,28 @@ class MainActivity : AppCompatActivity() {
 
         val call = apiService.createPost(token, sensorDataList)
 
+        val textView = findViewById<TextView>(R.id.textView)
+
         call.enqueue(object : Callback<ResponseBody> {
             override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                 if (response.isSuccessful) {
                     println("Created Post: ${response.body()}")
+                    runOnUiThread {
+                        textView.text = response.body().toString()// Suponiendo que UserInfo tiene un método toString adecuado
+                    }
                 } else {
                     println("Error: ${response.errorBody()}")
+                    runOnUiThread {
+                        textView.text = "Error: ${response.code()}"
+                    }
                 }
             }
 
             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                 println("Failed to create post: ${t.message}")
+                runOnUiThread {
+                    textView.text = "Falló la conexión: ${t.message}"
+                }
             }
         })
     }

@@ -12,7 +12,7 @@ data class SensorData(
 )
 
 data class ConfigJSON(
-    val sensor_id: String,
+    val sensor_id : String,
     val token: String
     )
 

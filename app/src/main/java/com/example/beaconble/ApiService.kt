@@ -13,7 +13,7 @@ interface APIService{
 
     @POST("AddData")
     fun createPost(
-        @Header("token") token:String,
+        @Header("Authorization") token:String,
         @Body posts: MutableList<SensorData>): Call<ResponseBody>
 }
 

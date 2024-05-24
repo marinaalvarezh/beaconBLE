@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 
@@ -98,13 +99,13 @@ class PermissionsHelper(val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Version Android M (Marshmallow, Android 6.0). Se necesita ACCES_FINE_LOCATION
             permissions.add(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
-            permissions.add(arrayOf(Manifest.permission.INTERNET))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Version Android 10. El permiso anterior + ACCESS_BACKGROUND_LOCATION si es necesario
             if (backgroundAccessRequested) {
                 permissions.add(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION))
             }
+           // permissions.add(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             // Version Android 12. Los anteriores + BLUETOOTH_SCAN
@@ -114,6 +115,7 @@ class PermissionsHelper(val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Version 13. POST_NOTIFICATIONS si utiliza un servicio en primer plano
             permissions.add(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
+           // permissions.add(arrayOf(Manifest.permission.MANAGE_EXTERNAL_STORAGE))
         }
         return permissions
     }
@@ -186,7 +188,7 @@ open class BeaconScanPermissionsActivity: PermissionsActivity()  {
         bundle.putString(Manifest.permission.ACCESS_BACKGROUND_LOCATION, "Background Location")
         bundle.putString(Manifest.permission.BLUETOOTH_SCAN, "Bluetooth")
         bundle.putString(Manifest.permission.POST_NOTIFICATIONS, "Notifications")
-        bundle.putString(Manifest.permission.INTERNET, "Internet")
+
         return bundle
     }
 
