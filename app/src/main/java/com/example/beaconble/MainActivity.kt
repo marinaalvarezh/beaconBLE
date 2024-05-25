@@ -241,7 +241,7 @@ class MainActivity : AppCompatActivity() {
 
             } else {
                 val token = configJSON.token
-                createPost(token, sensorData)
+                createPost(sensorData)
                 beaconManager.stopMonitoring(beaconReferenceApplication.region)
                 dialogTitle = "Beacon monitoring stopped."
                 dialogMessage =
@@ -259,7 +259,7 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-    private fun createRetrofit( baseURL: String, token: String): Retrofit {
+    private fun createRetrofit( baseURL: String): Retrofit {
 /*
         val client = OkHttpClient.Builder()
             .addInterceptor {chain: Interceptor.Chain ->
@@ -283,13 +283,12 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun createPost(
-        token: String,
         sensorData: SensorData
     ) {
-        val retrofit = createRetrofit("http://vps247.cesvima.upm.es/", token)
+        val retrofit = createRetrofit("http://vps247.cesvima.upm.es/")
         val apiService = retrofit.create(APIService::class.java)
 
-        val call = apiService.createPost(token, sensorData)
+        val call = apiService.createPost(configJSON.sensor_id, configJSON.token, sensorData)
 
         val textView = findViewById<TextView>(R.id.textView)
 
