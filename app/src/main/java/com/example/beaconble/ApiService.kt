@@ -10,11 +10,10 @@ import retrofit2.http.POST
 
 
 interface APIService{
-
-    @POST("AddData")
+    @POST("addData")
     fun createPost(
-        @Header("Authorization") token:String,
-        @Body posts: MutableList<SensorData>): Call<ResponseBody>
+        @Header("headers") token:String,
+        @Body body: SensorData): Call<ResponseBody>
 }
 
 

@@ -69,6 +69,7 @@ class PermissionsHelper(val context: Context) {
     // Manifest.permission.ACCESS_FINE_LOCATION
     // Manifest.permission.BLUETOOTH_CONNECT
     // Manifest.permission.BLUETOOTH_SCAN
+
     fun isPermissionGranted(permissionString: String): Boolean {
         //se comprueba con el Context un permiso específico
         return (ContextCompat.checkSelfPermission(context, permissionString) == PackageManager.PERMISSION_GRANTED)

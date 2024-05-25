@@ -1,16 +1,11 @@
 package com.example.beaconble
 
 
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.example.beaconble.BeaconScanPermissionsActivity
 import android.app.AlertDialog
-import android.hardware.Sensor
-import android.os.Environment
-import android.os.Environment.getExternalStoragePublicDirectory
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -21,9 +16,6 @@ import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.MonitorNotifier
 import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor
-import androidx.activity.ComponentActivity
-import androidx.compose.ui.window.isPopupLayout
-import com.google.gson.Gson
 import okhttp3.OkHttpClient
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -33,12 +25,10 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.POST
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.IOException
 import java.lang.Long.toHexString
-import java.lang.Long.toUnsignedString
+import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 class MainActivity : AppCompatActivity() {
@@ -51,15 +41,14 @@ class MainActivity : AppCompatActivity() {
     var alertDialog: AlertDialog? = null
 
 
-    val sensorDataList = mutableListOf<SensorData>()
+    lateinit var sensorData:SensorData
 
-    val configJSON = ConfigJSON ("7001", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTcxNjIyOTc0MCwianRpIjoiN2ZhMzRhN2UtNWFlYi00Y2QyLWE4ZjAtNWNmNDViMWU0NGNhIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6NzAwMSwibmJmIjoxNzE2MjI5NzQwLCJleHAiOjE3MTYyMzA2NDB9.VW1Om0dNadi341-T0XZS3exOfG1WRnGGQtZjMd6uPVA")
+    val configJSON = ConfigJSON (7001, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTcxNjIyOTc0MCwianRpIjoiN2ZhMzRhN2UtNWFlYi00Y2QyLWE4ZjAtNWNmNDViMWU0NGNhIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6NzAwMSwibmJmIjoxNzE2MjI5NzQwLCJleHAiOjE3MTYyMzA2NDB9.VW1Om0dNadi341-T0XZS3exOfG1WRnGGQtZjMd6uPVA")
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
 
         //define la Main Screen con los botones de ranging y monitoring
 
@@ -77,8 +66,6 @@ class MainActivity : AppCompatActivity() {
         beaconCountTextView = findViewById<TextView>(R.id.beaconCount)
         beaconCountTextView.text = "No beacons detected"
         beaconListView.adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, arrayOf("--"))
-
-
 
     }
 
@@ -140,17 +127,37 @@ class MainActivity : AppCompatActivity() {
         alertDialog?.show()
     }
 
-    fun addData(fielData: Int) : SensorData{
+    fun addData(fielData: Float) : SensorData{
+
+       /*
+       Formato Timestamp
+        val dateTime = LocalDateTime.now()
+
+        val formatter = DateTimeFormatter.ofPattern(("yyyy-MM-dd HH:mm:ss"))
+        val formattedDateTime = dateTime.format(formatter)
+
+        val timestamp = Timestamp.valueOf(formattedDateTime)
+
+        */
+
+        /*
+        formato String
+
+        val dateTime = LocalDateTime.now()
+        val formattedDateTime = dateTime.format(DateTimeFormatter.ISO_DATE_TIME)
+         */
+
 
         val sensorData = SensorData(
             id_sensor = configJSON.sensor_id,
-            timestamp = "",
-            latitud =0.0f,
-            longitud = 0.0f,
-            orientacion = 0.0f,
-            inclinacion = 0.0f,
+            token = configJSON.token,
+            timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
+            latitud = "2",
+            longitud = "3",
+            orientacion = 0,
+            inclinacion = 30,
             tipo_medida = "irradiancia",
-            valor = fielData
+            valor_medida = fielData.toDouble()
         )
 
         return sensorData
@@ -184,8 +191,9 @@ class MainActivity : AppCompatActivity() {
                             val intData5 = packet[5].toInt()
 
                             val combinedValue = (intData4 shl 8) or (intData5)
+                            val value = combinedValue.toFloat()
 
-                            sensorDataList.add(addData(combinedValue))
+                            sensorData = addData(value)
 
 
                             "Byte4: $byteData4 Byte5: $byteData5\nValor: $combinedValue \nHex4: 0x$hexData4   Hex5: 0x$hexData5"
@@ -233,7 +241,7 @@ class MainActivity : AppCompatActivity() {
 
             } else {
                 val token = configJSON.token
-                createPost("Bearer $token", sensorDataList)
+                createPost(token, sensorData)
                 beaconManager.stopMonitoring(beaconReferenceApplication.region)
                 dialogTitle = "Beacon monitoring stopped."
                 dialogMessage =
@@ -252,21 +260,23 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun createRetrofit( baseURL: String, token: String): Retrofit {
-
+/*
         val client = OkHttpClient.Builder()
             .addInterceptor {chain: Interceptor.Chain ->
                 val original: Request = chain.request()
                 val request: Request = original.newBuilder()
-                    .header("Authorization", "Bearer $token")
+                    .header("token", token)
                     .method(original.method, original.body)
                     .build()
                 chain.proceed(request)
             }
             .build()
 
+ */
+
         return Retrofit.Builder()
             .baseUrl(baseURL)
-            .client(client)
+           // .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -274,12 +284,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun createPost(
         token: String,
-        sensorDataList: MutableList<SensorData>
+        sensorData: SensorData
     ) {
         val retrofit = createRetrofit("http://vps247.cesvima.upm.es/", token)
         val apiService = retrofit.create(APIService::class.java)
 
-        val call = apiService.createPost(token, sensorDataList)
+        val call = apiService.createPost(token, sensorData)
 
         val textView = findViewById<TextView>(R.id.textView)
 
@@ -293,7 +303,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     println("Error: ${response.errorBody()}")
                     runOnUiThread {
-                        textView.text = "Error: ${response.code()}"
+                        textView.text = "Error: ${response.errorBody()}"
                     }
                 }
             }
