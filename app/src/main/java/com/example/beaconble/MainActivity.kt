@@ -12,21 +12,20 @@ import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
 import androidx.lifecycle.Observer
+import com.google.gson.Gson
 import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.MonitorNotifier
 import org.altbeacon.beacon.utils.UrlBeaconUrlCompressor
 import okhttp3.OkHttpClient
-import okhttp3.Interceptor
-import okhttp3.Request
 import okhttp3.ResponseBody
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.lang.Long.toHexString
-import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -96,7 +95,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-
     //monitoring detectar balizas en la region, ranging listar dichas balizas
     //monitoring requiere menos recursos
 
@@ -129,39 +127,18 @@ class MainActivity : AppCompatActivity() {
 
     fun addData(fielData: Float) : SensorData{
 
-       /*
-       Formato Timestamp
-        val dateTime = LocalDateTime.now()
-
-        val formatter = DateTimeFormatter.ofPattern(("yyyy-MM-dd HH:mm:ss"))
-        val formattedDateTime = dateTime.format(formatter)
-
-        val timestamp = Timestamp.valueOf(formattedDateTime)
-
-        */
-
-        /*
-        formato String
-
-        val dateTime = LocalDateTime.now()
-        val formattedDateTime = dateTime.format(DateTimeFormatter.ISO_DATE_TIME)
-         */
-
-
         val sensorData = SensorData(
-            id_sensor = configJSON.sensor_id,
+            id_sensor = configJSON.id_sensor,
             token = configJSON.token,
             timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
-            latitud = "2",
-            longitud = "3",
+            latitud = 2.000001,
+            longitud = 3.000001,
             orientacion = 0,
             inclinacion = 30,
             tipo_medida = "irradiancia",
             valor_medida = fielData.toDouble()
         )
-
         return sensorData
-
     }
 
     //si esta en el rango hace listado las balizas que hay
@@ -194,8 +171,6 @@ class MainActivity : AppCompatActivity() {
                             val value = combinedValue.toFloat()
 
                             sensorData = addData(value)
-
-
                             "Byte4: $byteData4 Byte5: $byteData5\nValor: $combinedValue \nHex4: 0x$hexData4   Hex5: 0x$hexData5"
 
                         }
@@ -208,8 +183,6 @@ class MainActivity : AppCompatActivity() {
                 ArrayAdapter(this, android.R.layout.simple_list_item_1, beaconInfoList)
         }
     }
-
-
 
         //boton para activar/desactivar el ranging
         fun rangingButtonTapped(view: View) {
@@ -241,7 +214,7 @@ class MainActivity : AppCompatActivity() {
 
             } else {
                 val token = configJSON.token
-                createPost(sensorData)
+                createPostApp(sensorData)
                 beaconManager.stopMonitoring(beaconReferenceApplication.region)
                 dialogTitle = "Beacon monitoring stopped."
                 dialogMessage =
@@ -260,35 +233,34 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun createRetrofit( baseURL: String): Retrofit {
-/*
-        val client = OkHttpClient.Builder()
-            .addInterceptor {chain: Interceptor.Chain ->
-                val original: Request = chain.request()
-                val request: Request = original.newBuilder()
-                    .header("token", token)
-                    .method(original.method, original.body)
-                    .build()
-                chain.proceed(request)
-            }
-            .build()
-
- */
 
         return Retrofit.Builder()
             .baseUrl(baseURL)
-           // .client(client)
+            .client(getClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
+    private fun getClient(): OkHttpClient{
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        val client = OkHttpClient.Builder()
+            .addInterceptor(MyInterceptor())
+            .addInterceptor(loggingInterceptor)
+            .build()
 
-    private fun createPost(
+        return client
+    }
+
+
+    private fun createPostApp(
         sensorData: SensorData
     ) {
         val retrofit = createRetrofit("http://vps247.cesvima.upm.es/")
         val apiService = retrofit.create(APIService::class.java)
 
-        val call = apiService.createPost(configJSON.sensor_id, configJSON.token, sensorData)
+        val call = apiService.createPost(sensorData)
 
         val textView = findViewById<TextView>(R.id.textView)
 
@@ -300,9 +272,10 @@ class MainActivity : AppCompatActivity() {
                         textView.text = response.body().toString()// Suponiendo que UserInfo tiene un método toString adecuado
                     }
                 } else {
-                    println("Error: ${response.errorBody()}")
+                    val error = response.errorBody()
+                    println("Error: $error")
                     runOnUiThread {
-                        textView.text = "Error: ${response.errorBody()}"
+                        textView.text = "Error: $error"
                     }
                 }
             }

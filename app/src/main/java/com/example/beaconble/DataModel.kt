@@ -7,8 +7,8 @@ data class SensorData(
     @SerializedName("id_sensor") val id_sensor: Int,
     @SerializedName("token")val token: String,
     @SerializedName("timestamp")val timestamp: String,
-    @SerializedName("latitud")val latitud: String,
-    @SerializedName("longitud")val longitud: String,
+    @SerializedName("latitud")val latitud: Double,
+    @SerializedName("longitud")val longitud: Double,
     @SerializedName("orientacion")val orientacion: Int,
     @SerializedName("inclinacion")val inclinacion: Int,
     @SerializedName("tipo_medida")val tipo_medida: String,
@@ -16,7 +16,7 @@ data class SensorData(
 )
 
 data class ConfigJSON(
-    val sensor_id : Int,
+    val id_sensor : Int,
     val token: String
 )
 

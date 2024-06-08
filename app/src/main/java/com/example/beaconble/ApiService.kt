@@ -12,8 +12,8 @@ import retrofit2.http.POST
 interface APIService{
     @POST("addData")
     fun createPost(
-        @Header("sensor_id") sensor_id:Int,
-        @Header ("token")token:String,
+      //  @Header("sensor_id") sensor_id:Int,
+     //   @Header ("token")token:String,
         @Body body: SensorData): Call<ResponseBody>
 }
 
